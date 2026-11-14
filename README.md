@@ -8,6 +8,7 @@ the doorbell itself.
 
 ## Project Structure
 | Path | What it is |
+|---|---|---|
 | `data/` | Every team's `team_NN_train.csv` | 
 | `train.py` | Loads the CSV, splits off validation rows, trains the network, saves it to `model/` | 
 | `app/model.py` | The network (5 → 32 → 32 → 1, ReLU), shared by training and the server | 
