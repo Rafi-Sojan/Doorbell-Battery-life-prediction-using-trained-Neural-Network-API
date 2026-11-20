@@ -8,14 +8,17 @@ the doorbell itself.
 
 ## Project Structure
 | Path | What it is |
-|---|---|---|
-| `data/` | Every team's `team_NN_train.csv` | 
-| `train.py` | Loads the CSV, splits off validation rows, trains the network, saves it to `model/` | 
-| `app/model.py` | The network (5 → 32 → 32 → 1, ReLU), shared by training and the server | 
-| `app/main.py` | The API: `GET /health`, `GET /model_info`, `POST /predict`, `POST /predict_batch` | 
-| `client/bench.py` | Times your API from outside: first request, p50/p95/p99 per stage | 
-| `.devcontainer/` | Makes Codespaces install everything on start | 
-| `model/` | Created by `train.py`: `model.pt` and `config.json` | 
+|---|---|
+| `data/` | Team training data, such as `team_24_train.csv`. |
+| `train.py` | Generates Target 1 plots, removes sensor glitches, evaluates baselines, trains the network, and saves the model. |
+| `app/model.py` | Defines the shared `BatteryNet` architecture and its input feature names. |
+| `app/main.py` | FastAPI service exposing `/health`, `/model_info`, `/predict`, and `/predict_batch`. |
+| `client/bench.py` | Measures API round-trip latency and reported server-stage timings. |
+| `model/` | Saved model artifacts: `model.pt` and `config.json`. |
+| `plots/` | Generated Target 1 histograms, relationship plots, and linear-prediction plots; ignored by Git. |
+| `.devcontainer/` | Codespaces configuration, including Python setup and port forwarding. |
+| `requirements.txt` | Python dependencies for training, serving, plotting, and benchmarking. |
+| `.gitignore` | Excludes local environments and generated experiment outputs. |
 
 ---
 ## Targets to be achieved
