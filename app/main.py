@@ -58,7 +58,45 @@ def model_info():
     #  "fits_300kb_sram_f32": true/false, "fits_300kb_sram_int8": true/false}
     # Count only the Linear layers (ReLU has no parameters). Clue: a Linear layer m has
     # m.in_features and m.out_features.
-    return {"layers": [], "total_params": 0}
+    layers = []
+    total_params = 0
+    total_macs = 0
+    linear_number = 1
+
+    for module in net.net:
+        if not isinstance(module, torch.nn.Linear):
+            continue
+
+        n_in = module.in_features
+        n_out = module.out_features
+        params = n_in * n_out + n_out
+        macs = n_in * n_out
+
+        layers.append({
+            "name": f"linear{linear_number}",
+            "in": n_in,
+            "out": n_out,
+            "params": params,
+            "bytes_f32": params * 4,
+            "macs": macs,
+        })
+
+        total_params += params
+        total_macs += macs
+        linear_number += 1
+
+    total_bytes_f32 = total_params * 4
+    total_bytes_int8 = total_params
+
+    return {
+        "layers": layers,
+        "total_params": total_params,
+        "total_bytes_f32": total_bytes_f32,
+        "total_bytes_int8": total_bytes_int8,
+        "total_macs": total_macs,
+        "fits_300kb_sram_f32": total_bytes_f32 <= 300 * 1024,
+        "fits_300kb_sram_int8": total_bytes_int8 <= 300 * 1024,
+    }
 
 
 @app.get("/health")

@@ -6,4 +6,8 @@ __pycache__/
 .venv/
 .python311/
 
+# Local documentation and generated experiment outputs
+plots/
+bench_*.csv
+
 

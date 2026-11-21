@@ -32,12 +32,12 @@ the doorbell itself.
 - [x] Run `train.py` as it is and record the network's MAE.
 
 ### Target 2: A small network, opened up
-- [ ] Predict, by hand, the parameters, float32 bytes and MACs of 5 → 32 → 32 → 1.
-- [ ] **Code (`train.py`):** normalise the inputs using the training rows only. Compare training with and without normalisation.
-- [ ] Train with hidden widths 4, 8, 16, 32 and 64, with one and two hidden layers (`--hidden 16` or `--hidden 32,32`). Plot validation MAE against parameters.
-- [ ] Compare training MAE with validation MAE for your chosen size. Is it overfitting?
-- [ ] Work out the per-layer table (parameters, bytes, MACs) by hand, then **code (`app/main.py`):** make `/model_info` compute it from the network itself.
-- [ ] Choose your final model and write down the MAE you expect on the company's 400 unseen readings.
+- [x] Predict, by hand, the parameters, float32 bytes and MACs of 5 → 32 → 32 → 1.
+- [x] **Code (`train.py`):** normalise the inputs using the training rows only. Compare training with and without normalisation.
+- [x] Train with hidden widths 4, 8, 16, 32 and 64, with one and two hidden layers (`--hidden 16` or `--hidden 32,32`). Plot validation MAE against parameters.
+- [x] Compare training MAE with validation MAE for your chosen size. Is it overfitting?
+- [x] Work out the per-layer table (parameters, bytes, MACs) by hand, then **code (`app/main.py`):** make `/model_info` compute it from the network itself.
+- [x] Choose your final model and write down the MAE you expect on the company's 400 unseen readings.
 
 ### Target 3: Serve it, and time every stage
 - [ ] Predict the inference time and the laptop-to-Codespace round trip.
