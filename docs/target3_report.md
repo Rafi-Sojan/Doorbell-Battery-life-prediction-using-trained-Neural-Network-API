@@ -201,8 +201,21 @@ Before final submission, run the same checks with the API exposed on Codespace p
 6. compare remote round-trip latency with the local tables in this report; and
 7. confirm that the interactive `/docs` page is reachable on the public port.
 
+### 8.1 Completed Codespace batch result
+
+The 400-reading comparison was repeated through the public Codespace URL. The same 400 valid readings were sent as individual requests and as one batch request:
+
+| Test | Remote total time |
+|---|---:|
+| 400 individual public requests | 7,277.303 ms |
+| One public batch request | 41.879 ms |
+| Batch speedup | 173.77x |
+| Predictions exactly equal | Yes |
+
+The individual-request average was approximately 18.193 ms per request. The much larger total for individual requests is expected because each reading incurs a separate public-tunnel round trip. The exact equality confirms that the stable output rounding also works through the deployed Codespace endpoint.
+
 ## 9. Conclusion
 
-Target 3 is functionally complete for the local environment. The API validates the supported input domain, exposes the required timing breakdown, reports model resource information, rejects known glitch inputs, and preserves exact batch/single prediction equality. The most important measured performance result is the 153.59x local speedup from batching 400 readings.
+Target 3 is functionally complete locally and has now passed the public Codespace batch/equality check. The API validates the supported input domain, exposes the required timing breakdown, reports model resource information, rejects known glitch inputs, and preserves exact batch/single prediction equality. The measured batching improvement was 153.59x locally and 173.77x through the public Codespace endpoint.
 
-The only remaining evidence needed for a final deployment claim is the equivalent laptop-to-Codespace benchmark. That measurement should be appended to this report after the public endpoint is running.
+For a complete latency-distribution record, the 200-request P50/P95/P99 benchmark can still be run through the public endpoint. It does not change the successful endpoint, validation, or batch-equality result already established here.

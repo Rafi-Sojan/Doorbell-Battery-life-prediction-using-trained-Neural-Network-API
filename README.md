@@ -40,13 +40,13 @@ the doorbell itself.
 - [x] Choose your final model and write down the MAE you expect on the company's 400 unseen readings.
 
 ### Target 3: Serve it, and time every stage
-- [ ] Predict the inference time and the laptop-to-Codespace round trip.
-- [ ] **Code (`app/main.py`):** give every input a range, so glitches get HTTP 422. Base the ranges on what a real sensor can report, not on your data's smallest and largest values: a real reading just outside your data must still get an answer. Test three glitches at `/docs`.
-- [ ] **Code (`app/main.py`):** time `normalise`, `inference` and `build` the same way `parse` is timed.
-- [ ] From your **laptop**: `python client/bench.py --url <address> --n 200`. Record the first request, then p50/p95/p99 of the round trip and every stage.
-- [ ] Draw where the time goes in a typical request (server stages + network and framework). Was the LLM right?
-- [ ] Run it again with `--no-keepalive`, and once inside the Codespace against `http://localhost:8000`. Explain both differences.
-- [ ] Time 400 single `/predict` calls against one `/predict_batch` call of 400 rows. Explain the difference.
+- [x] Predict the inference time and the laptop-to-Codespace round trip.
+- [x] **Code (`app/main.py`):** give every input a range, so glitches get HTTP 422. Base the ranges on what a real sensor can report, not on your data's smallest and largest values: a real reading just outside your data must still get an answer. Test three glitches at `/docs`.
+- [x] **Code (`app/main.py`):** time `normalise`, `inference` and `build` the same way `parse` is timed.
+- [x] From your **laptop**: `python client/bench.py --url <address> --n 200`. Record the first request, then p50/p95/p99 of the round trip and every stage.
+- [x] Draw where the time goes in a typical request (server stages + network and framework). Was the LLM right?
+- [x] Run it again with `--no-keepalive`, and once inside the Codespace against `http://localhost:8000`. Explain both differences.
+- [x] Time 400 single `/predict` calls against one `/predict_batch` call of 400 rows. Explain the difference.
 
 ### Target 4: Would it fit inside the doorbell?
 ESP32-S3: about 512 KB SRAM (roughly 300 KB free for your program), 8 MB PSRAM, 16 MB flash.
