@@ -214,8 +214,36 @@ The 400-reading comparison was repeated through the public Codespace URL. The sa
 
 The individual-request average was approximately 18.193 ms per request. The much larger total for individual requests is expected because each reading incurs a separate public-tunnel round trip. The exact equality confirms that the stable output rounding also works through the deployed Codespace endpoint.
 
+### 8.2 Completed Codespace latency distributions
+
+The public endpoint was then measured with 200 warmed-up requests in each connection mode. The values below are full client round-trip measurements unless the row is labelled as a server stage.
+
+#### Keep-alive
+
+| Measurement | P50 ms | P95 ms | P99 ms |
+|---|---:|---:|---:|
+| Full round trip | 13.119 | 28.965 | 117.443 |
+| `parse` | 0.035 | 0.063 | 0.088 |
+| `normalise` | 0.031 | 0.060 | 0.077 |
+| `inference` | 0.175 | 0.303 | 1.722 |
+| `build` | 0.047 | 0.069 | 0.645 |
+| `server_total` | 0.300 | 0.595 | 2.045 |
+
+#### No keep-alive
+
+| Measurement | P50 ms | P95 ms | P99 ms |
+|---|---:|---:|---:|
+| Full round trip | 38.079 | 53.368 | 85.925 |
+| `parse` | 0.044 | 0.055 | 0.082 |
+| `normalise` | 0.044 | 0.069 | 0.085 |
+| `inference` | 0.224 | 0.298 | 0.350 |
+| `build` | 0.047 | 0.070 | 0.093 |
+| `server_total` | 0.386 | 0.502 | 1.667 |
+
+Keep-alive reduced the median full round trip from 38.079 ms to 13.119 ms, a reduction of approximately 65.5%. The server-side model work remained below 1 ms at P95 in both modes, showing that connection and public-tunnel overhead dominate the end-to-end result. The keep-alive P99 was higher than the no-keep-alive P99 in this sample because percentile tails are sensitive to occasional network events; this does not overturn the median and P95 benefit of connection reuse.
+
 ## 9. Conclusion
 
-Target 3 is functionally complete locally and has now passed the public Codespace batch/equality check. The API validates the supported input domain, exposes the required timing breakdown, reports model resource information, rejects known glitch inputs, and preserves exact batch/single prediction equality. The measured batching improvement was 153.59x locally and 173.77x through the public Codespace endpoint.
+Target 3 is complete locally and has passed the required public Codespace verification. The API validates the supported input domain, exposes the required timing breakdown, reports model resource information, rejects known glitch inputs, preserves exact batch/single prediction equality, and has documented P50/P95/P99 latency distributions. The measured batching improvement was 153.59x locally and 173.77x through the public Codespace endpoint.
 
-For a complete latency-distribution record, the 200-request P50/P95/P99 benchmark can still be run through the public endpoint. It does not change the successful endpoint, validation, or batch-equality result already established here.
+The main performance conclusion is that inference is not the bottleneck: the server-side model stages remain sub-millisecond at P95, while public-tunnel and connection overhead dominate full round-trip latency.
