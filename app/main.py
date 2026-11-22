@@ -87,12 +87,22 @@ def model_info():
 
     total_bytes_f32 = total_params * 4
     total_bytes_int8 = total_params
+    activation_widths = [len(FEATURES)]
+    for module in net.net:
+        if isinstance(module, torch.nn.Linear):
+            activation_widths.append(module.out_features)
+    largest_activation_values = max(activation_widths)
+    largest_activation_bytes_f32 = largest_activation_values * 4
+    largest_activation_bytes_int8 = largest_activation_values
 
     return {
         "layers": layers,
         "total_params": total_params,
         "total_bytes_f32": total_bytes_f32,
         "total_bytes_int8": total_bytes_int8,
+        "largest_activation_values": largest_activation_values,
+        "largest_activation_bytes_f32": largest_activation_bytes_f32,
+        "largest_activation_bytes_int8": largest_activation_bytes_int8,
         "total_macs": total_macs,
         "fits_300kb_sram_f32": total_bytes_f32 <= 300 * 1024,
         "fits_300kb_sram_int8": total_bytes_int8 <= 300 * 1024,

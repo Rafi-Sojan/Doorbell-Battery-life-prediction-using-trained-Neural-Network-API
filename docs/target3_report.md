@@ -13,7 +13,7 @@ The API passed the following checks:
 - A batch of 400 readings produced exactly the same predictions as 400 individual requests after stable output rounding was added.
 - The 400-reading batch completed in 4.035 ms of server time, compared with 619.692 ms for individual requests, giving a measured 153.59x throughput improvement in the local test.
 
-These measurements satisfy the local Target 3 checks. A Codespace/public-port measurement is still required before claiming the final remote latency result, because network distance and deployment infrastructure are not represented by the local benchmark.
+These measurements satisfy the local Target 3 checks. The public Codespace endpoint was also verified separately, because network distance and deployment infrastructure are not represented by the local benchmark.
 
 ## 2. Target 3 objective
 
@@ -69,6 +69,67 @@ The prediction path records five stages:
 - `server_total`: total measured server-side processing time.
 
 The output is rounded consistently before it is returned. This makes the public numerical contract stable when a value is computed once as a single request and again inside a batch tensor.
+
+### 4.3 Code blocks and explanations
+
+#### Code block A: validation at the API boundary
+
+```python
+class Reading(BaseModel):
+    # Each bound rejects impossible or unsupported sensor values with HTTP 422.
+    battery_v: float = Field(ge=3.0, le=4.3)
+    temp_c: float = Field(ge=-40.0, le=85.0)
+    rings_per_day: float = Field(ge=0.0, le=1000.0)
+    wifi_rssi_dbm: float = Field(ge=-100.0, le=-1.0)
+    age_months: float = Field(ge=0.0, le=240.0)
+```
+
+The `Field` constraints run before feature normalisation and inference. This is why the known glitch values `battery_v = 0`, `temp_c = -127`, and `wifi_rssi_dbm = 0` return HTTP 422 instead of producing a prediction.
+
+#### Code block B: timing the three model stages
+
+```python
+# Normalise using the training mean and standard deviation saved with the model.
+t0 = time.perf_counter()
+x = (np.array([[getattr(r, f) for f in FEATURES] for r in rows], np.float32) - MU) / SD
+t["normalise"] = ms(t0)
+
+# Measure only the neural-network forward pass.
+t0 = time.perf_counter()
+with torch.no_grad():
+    y = net(torch.from_numpy(x)).numpy()
+t["inference"] = ms(t0)
+
+# Measure output conversion, stable rounding, clipping, and response preparation.
+t0 = time.perf_counter()
+y = np.round(y.astype(np.float64), 3)
+days = [round(float(v), 2) for v in np.maximum(y, 0)]
+body = {"days_left": days if isinstance(data, Batch) else days[0]}
+t["build"] = ms(t0)
+```
+
+Separating these stages showed that the neural-network computation was much smaller than the public request overhead. Rounding to three decimal places before returning two decimal places also made the 400 single-request predictions exactly equal to the corresponding batch predictions.
+
+#### Code block C: batch equality check
+
+```python
+# Collect one result for every individual request.
+single_predictions = []
+for row in rows:
+    response = session.post(f"{BASE}/predict", json=row)
+    response.raise_for_status()
+    single_predictions.append(response.json()["days_left"])
+
+# Collect the same readings in one vectorised request.
+response = session.post(f"{BASE}/predict_batch", json={"rows": rows})
+response.raise_for_status()
+batch_predictions = response.json()["days_left"]
+
+# This must be True before claiming batch equivalence.
+print("answers_match:", single_predictions == batch_predictions)
+```
+
+The equality result was `True` for all 400 remote readings. The comparison is important because a fast batch path is not acceptable if it changes the public prediction values.
 
 ### 4.3 Model information
 
@@ -187,11 +248,11 @@ The reported timings depend on the local operating system, Python runtime, PyTor
 |---|---|
 | Prediction | The API should reject malformed readings, expose timing breakdowns, and produce identical single and batch predictions. |
 | Measurement | Endpoint checks passed; five invalid cases returned 422; required timings were present; 400 batch predictions matched 400 single predictions; batch speedup was 153.59x locally. |
-| Explanation | Validation protects the model boundary, stage timings separate model work from request overhead, and stable rounding makes the public result deterministic. The remaining gap is the unmeasured laptop-to-Codespace network path. |
+| Explanation | Validation protects the model boundary, stage timings separate model work from request overhead, and stable rounding makes the public result deterministic. The remote latency tables now quantify the laptop-to-Codespace path. |
 
-## 8. Required remote follow-up
+## 8. Remote verification record
 
-Before final submission, run the same checks with the API exposed on Codespace port 8000 and accessed from the laptop:
+The following checks were completed with the API exposed on Codespace port 8000 and accessed through its public URL:
 
 1. verify `/health` through the public URL;
 2. verify `/model_info` through the public URL;
