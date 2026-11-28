@@ -303,6 +303,54 @@ The public endpoint was then measured with 200 warmed-up requests in each connec
 
 Keep-alive reduced the median full round trip from 38.079 ms to 13.119 ms, a reduction of approximately 65.5%. The server-side model work remained below 1 ms at P95 in both modes, showing that connection and public-tunnel overhead dominate the end-to-end result. The keep-alive P99 was higher than the no-keep-alive P99 in this sample because percentile tails are sensitive to occasional network events; this does not overturn the median and P95 benefit of connection reuse.
 
+### 8.3 Official `client/bench.py` public run
+
+The repository's official benchmark client was run against the public Codespace endpoint with `--n 200`. It confirmed the health response and measured the first request separately, followed by the distribution for requests 2 through 200.
+
+| Measurement | First request | P50 ms | P95 ms | P99 ms |
+|---|---:|---:|---:|---:|
+| Full round trip | 907.7 ms | 37.957 | 56.812 | 135.725 |
+| `parse` | — | 0.035 | 0.052 | 0.069 |
+| `normalise` | — | 0.032 | 0.057 | 0.073 |
+| `inference` | — | 0.173 | 0.269 | 0.334 |
+| `build` | — | 0.041 | 0.066 | 0.078 |
+| `server_total` | — | 0.297 | 0.447 | 0.558 |
+| `network_and_framework` | — | 37.617 | 56.314 | 135.300 |
+
+The first request is much slower because of cold-start and connection setup. After warm-up, the server-side model stages remain sub-millisecond while the public network and framework account for almost all of the round-trip time. The generated `bench_*.csv` file is ignored by Git as intended.
+
+### 8.4 Official 400-request single-call run
+
+The same official benchmark client was run with `--n 400`. This measures 400 individual `POST /predict` calls; it is separate from the one-request `POST /predict_batch` comparison documented above.
+
+| Measurement | First request | P50 ms | P95 ms | P99 ms |
+|---|---:|---:|---:|---:|
+| Full round trip | 273.6 ms | 33.037 | 39.730 | 65.197 |
+| `parse` | — | 0.038 | 0.054 | 0.070 |
+| `normalise` | — | 0.036 | 0.057 | 0.079 |
+| `inference` | — | 0.183 | 0.274 | 0.306 |
+| `build` | — | 0.042 | 0.062 | 0.077 |
+| `server_total` | — | 0.314 | 0.460 | 0.502 |
+| `network_and_framework` | — | 32.717 | 39.334 | 64.739 |
+
+All 400 individual requests completed successfully. The benchmark also confirmed the expected health response before sending predictions.
+
+### 8.5 Current public 400-row batch run
+
+The current public URL was tested with one `POST /predict_batch` request containing 400 valid rows. The endpoint returned HTTP 200 and exactly 400 predictions.
+
+| Batch measurement | Cold batch | Warm batch |
+|---|---:|---:|
+| Full round trip | 630.186 ms | 304.053 ms |
+| `parse` | 10.878 ms | 9.550 ms |
+| `normalise` | 2.528 ms | 0.429 ms |
+| `inference` | 295.964 ms | 0.273 ms |
+| `build` | 0.236 ms | 0.209 ms |
+| `server_total` | 309.636 ms | 10.476 ms |
+| Predictions received | 400 | 400 |
+
+The first batch included a one-time inference warm-up cost. The repeated batch removed that spike, leaving parsing and public network/framework overhead as the dominant costs. This result confirms that `/predict_batch` accepts the full 400-row payload at the current public endpoint.
+
 ## 9. Conclusion
 
 Target 3 is complete locally and has passed the required public Codespace verification. The API validates the supported input domain, exposes the required timing breakdown, reports model resource information, rejects known glitch inputs, preserves exact batch/single prediction equality, and has documented P50/P95/P99 latency distributions. The measured batching improvement was 153.59x locally and 173.77x through the public Codespace endpoint.
